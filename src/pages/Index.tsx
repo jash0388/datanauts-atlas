@@ -276,6 +276,9 @@ const Index = () => {
       if (result.screenshot) {
         setBrowserScreenshot(result.screenshot);
       }
+      if (result.links) {
+        setBrowserLinks(result.links);
+      }
       if (result.linksCount !== undefined) {
         setActivity((a) => ({ ...a, elementsFound: result.linksCount }));
       }
