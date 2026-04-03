@@ -143,7 +143,7 @@ const Index = () => {
     return resp.json();
   };
 
-  // Execute a command and get page state
+  // Execute a command — ALL commands go through the backend now
   const executeCommand = async (command: string): Promise<{
     success: boolean;
     error?: string;
@@ -152,34 +152,30 @@ const Index = () => {
     screenshot?: string | null;
     linksCount?: number;
     markdown?: string;
+    links?: { href: string; text: string }[];
   }> => {
     const cmd = command.toUpperCase();
 
     if (cmd.startsWith("GOTO ")) {
       const targetUrl = command.slice(5).trim();
       try {
-        const data = await callAgent({ action: "fetch-page", url: targetUrl });
-        return data;
+        return await callAgent({ action: "fetch-page", url: targetUrl });
       } catch (err) {
-        return {
-          success: false,
-          error: err instanceof Error ? err.message : "Failed",
-          pageInfo: { url: targetUrl, title: "" },
-          pageSummary: "",
-          screenshot: null,
-        };
+        return { success: false, error: err instanceof Error ? err.message : "Failed", pageInfo: { url: targetUrl, title: "" }, pageSummary: "", screenshot: null };
       }
     }
 
-    // For CLICK, TYPE, PRESS, SCROLL, WAIT — simulate with current page context
-    await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
-
-    return {
-      success: true,
-      pageInfo: { url: browserUrl, title: browserTitle },
-      pageSummary: browserContent ? `Current page: ${browserTitle}\nURL: ${browserUrl}\n\n${browserContent.slice(0, 1000)}` : "",
-      screenshot: browserScreenshot,
-    };
+    // CLICK, TYPE, PRESS, SCROLL, WAIT — send to backend for intelligent handling
+    try {
+      return await callAgent({
+        action: "execute-command",
+        command,
+        pageLinks: browserLinks,
+        currentUrl: browserUrl,
+      });
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : "Failed", pageInfo: { url: browserUrl, title: browserTitle }, pageSummary: "", screenshot: browserScreenshot };
+    }
   };
 
   /**
