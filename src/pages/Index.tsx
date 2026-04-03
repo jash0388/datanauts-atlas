@@ -143,40 +143,7 @@ const Index = () => {
     return resp.json();
   };
 
-  // Execute a command — ALL commands go through the backend now
-  const executeCommand = async (command: string): Promise<{
-    success: boolean;
-    error?: string;
-    pageInfo: { url: string; title: string };
-    pageSummary: string;
-    screenshot?: string | null;
-    linksCount?: number;
-    markdown?: string;
-    links?: { href: string; text: string }[];
-  }> => {
-    const cmd = command.toUpperCase();
 
-    if (cmd.startsWith("GOTO ")) {
-      const targetUrl = command.slice(5).trim();
-      try {
-        return await callAgent({ action: "fetch-page", url: targetUrl });
-      } catch (err) {
-        return { success: false, error: err instanceof Error ? err.message : "Failed", pageInfo: { url: targetUrl, title: "" }, pageSummary: "", screenshot: null };
-      }
-    }
-
-    // CLICK, TYPE, PRESS, SCROLL, WAIT — send to backend for intelligent handling
-    try {
-      return await callAgent({
-        action: "execute-command",
-        command,
-        pageLinks: browserLinks,
-        currentUrl: browserUrl,
-      });
-    } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : "Failed", pageInfo: { url: browserUrl, title: browserTitle }, pageSummary: "", screenshot: browserScreenshot };
-    }
-  };
 
   /**
    * THE CORE AGENTIC LOOP — observe → think → act → repeat
