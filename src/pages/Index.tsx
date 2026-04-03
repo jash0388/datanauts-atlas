@@ -218,6 +218,12 @@ const Index = () => {
           command = "PRESS Enter";
           thought = "Auto-pressing Enter because the TYPE command was repeated";
           repeatCount = 0;
+        } else if (/^SCROLL/i.test(command)) {
+          // Allow up to 4 scrolls before stopping
+          if (repeatCount >= 4) {
+            addStep({ id: stepCount, command: "DONE — Stopped: scrolled too many times", status: "done" });
+            break;
+          }
         } else {
           addStep({ id: stepCount, command: "DONE — Stopped: repeated action detected", status: "done" });
           break;
