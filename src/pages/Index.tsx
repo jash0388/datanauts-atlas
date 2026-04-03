@@ -403,8 +403,14 @@ const Index = () => {
     setActivity({ currentUrl: "", currentStep: 0, maxSteps: MAX_AGENT_STEPS, status: "idle" });
   };
 
-  const isWebTask = (msg: string) =>
-    /search|go to|find|open|navigate|click|scrape|fill|browse|visit|look up|download|submit|login|sign in|register|check|show me|take me|continue|yes|do it|ok|okay|sure|go ahead|proceed/i.test(msg);
+  // Default to agent mode for most messages; only skip for very short/conversational ones
+  const isWebTask = (msg: string) => {
+    const lower = msg.toLowerCase().trim();
+    // Skip agent for very short greetings/conversational
+    if (/^(hi|hello|hey|thanks|thank you|ok|okay|bye|yes|no|what|who|how are you|help)\s*[!?.]*$/i.test(lower)) return false;
+    // Trigger agent for any actionable-sounding request
+    return /search|go\s?to|find|open|opne|navigate|click|scrape|fill|browse|visit|look\s?up|download|submit|login|sign\s?in|register|check|show\s?me|take\s?me|play|watch|read|get|fetch|load|access|explore|view|list|compare|book|order|buy|send|post|create|make|start|launch|run|try|use|test|enter|type|write|upload|pick|choose|select|grab|pull\s?up|head\s?to|hop\s?on|continue|proceed|do\s?it|go\s?ahead|sure|youtube|google|github|reddit|twitter|amazon|wikipedia|netflix|spotify|facebook|instagram|linkedin|website|webpage|page|site|url|link|www\.|\.com|\.org|\.net|\.io|http/i.test(lower);
+  };
 
   const handleSend = async (text: string, images?: string[]) => {
     abortRef.current = false;
