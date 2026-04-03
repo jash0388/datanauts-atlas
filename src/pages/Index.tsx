@@ -148,33 +148,36 @@ const Index = () => {
     error?: string;
     pageInfo: { url: string; title: string };
     pageSummary: string;
+    screenshot?: string | null;
     linksCount?: number;
+    markdown?: string;
   }> => {
     const cmd = command.toUpperCase();
 
     if (cmd.startsWith("GOTO ")) {
-      const url = command.slice(5).trim();
+      const targetUrl = command.slice(5).trim();
       try {
-        const data = await callAgent({ action: "fetch-page", url });
+        const data = await callAgent({ action: "fetch-page", url: targetUrl });
         return data;
       } catch (err) {
         return {
           success: false,
           error: err instanceof Error ? err.message : "Failed",
-          pageInfo: { url, title: "" },
+          pageInfo: { url: targetUrl, title: "" },
           pageSummary: "",
+          screenshot: null,
         };
       }
     }
 
-    // For CLICK, TYPE, PRESS, SCROLL, WAIT — simulate execution
-    // In a real setup these would control Playwright
-    await new Promise((r) => setTimeout(r, 800 + Math.random() * 400));
+    // For CLICK, TYPE, PRESS, SCROLL, WAIT — simulate with current page context
+    await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
 
     return {
       success: true,
       pageInfo: { url: browserUrl, title: browserTitle },
       pageSummary: browserContent ? `Current page: ${browserTitle}\nURL: ${browserUrl}\n\n${browserContent.slice(0, 1000)}` : "",
+      screenshot: browserScreenshot,
     };
   };
 
