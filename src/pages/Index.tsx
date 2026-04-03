@@ -202,6 +202,12 @@ const Index = () => {
     let lastCommand = "";
     let repeatCount = 0;
 
+    // Track page state locally to avoid stale closure issues
+    let localUrl = "";
+    let localTitle = "";
+    let localContent = "";
+    let localLinks: { href: string; text: string }[] = [];
+
     while (stepCount < MAX_AGENT_STEPS && !abortRef.current) {
       stepCount++;
       setStepNumber(stepCount);
@@ -212,11 +218,14 @@ const Index = () => {
 
       let nextAction: { command: string; thought: string };
       try {
+        const pageContext = localContent
+          ? `Page: ${localTitle}\nURL: ${localUrl}\n\n${localContent.slice(0, 1500)}`
+          : "";
         const data = await callAgent({
           action: "get-next-action",
           userTask,
           agentHistory,
-          pageContext: browserContent ? `Page: ${browserTitle}\nURL: ${browserUrl}\n\n${browserContent.slice(0, 1500)}` : "",
+          pageContext,
         });
         nextAction = parseAgentResponse(data.text || "DONE");
       } catch (err) {
@@ -260,24 +269,49 @@ const Index = () => {
       setActivity((a) => ({ ...a, status: "executing", lastCommand: command }));
       addStep({ id: stepCount, command, status: "running" });
 
-      const result = await executeCommand(command);
+      // Use local state for links/url instead of stale React state
+      const result = await (async () => {
+        const cmd = command.toUpperCase();
+        if (cmd.startsWith("GOTO ")) {
+          const targetUrl = command.slice(5).trim();
+          try {
+            return await callAgent({ action: "fetch-page", url: targetUrl });
+          } catch (err) {
+            return { success: false, error: err instanceof Error ? err.message : "Failed", pageInfo: { url: targetUrl, title: "" }, pageSummary: "", screenshot: null };
+          }
+        }
+        try {
+          return await callAgent({
+            action: "execute-command",
+            command,
+            pageLinks: localLinks,
+            currentUrl: localUrl,
+          });
+        } catch (err) {
+          return { success: false, error: err instanceof Error ? err.message : "Failed", pageInfo: { url: localUrl, title: localTitle }, pageSummary: "", screenshot: null };
+        }
+      })();
 
-      // Update browser panel
+      // Update browser panel AND local state
       if (result.pageInfo?.url) {
-        setBrowserUrl(result.pageInfo.url);
-        setActivity((a) => ({ ...a, currentUrl: result.pageInfo.url }));
+        localUrl = result.pageInfo.url;
+        setBrowserUrl(localUrl);
+        setActivity((a) => ({ ...a, currentUrl: localUrl }));
       }
       if (result.pageInfo?.title) {
-        setBrowserTitle(result.pageInfo.title);
+        localTitle = result.pageInfo.title;
+        setBrowserTitle(localTitle);
       }
       if (result.pageSummary) {
-        setBrowserContent(result.markdown || result.pageSummary);
+        localContent = result.markdown || result.pageSummary;
+        setBrowserContent(localContent);
       }
       if (result.screenshot) {
         setBrowserScreenshot(result.screenshot);
       }
       if (result.links) {
-        setBrowserLinks(result.links);
+        localLinks = result.links;
+        setBrowserLinks(localLinks);
       }
       if (result.linksCount !== undefined) {
         setActivity((a) => ({ ...a, elementsFound: result.linksCount }));
@@ -289,8 +323,8 @@ const Index = () => {
         consecutiveFailures = 0;
 
         let feedback = `Action "${command}" succeeded.`;
-        feedback += `\nPage URL: ${result.pageInfo?.url || "unknown"}`;
-        feedback += `\nPage title: ${result.pageInfo?.title || "unknown"}`;
+        feedback += `\nPage URL: ${localUrl}`;
+        feedback += `\nPage title: ${localTitle}`;
         if (result.pageSummary) {
           feedback += `\n\nCurrent page state:\n${result.pageSummary.slice(0, 1500)}`;
         }
@@ -307,7 +341,7 @@ const Index = () => {
         consecutiveFailures++;
 
         let feedback = `Action "${command}" FAILED with error: ${result.error}`;
-        feedback += `\nPage is still at: ${result.pageInfo?.url || "unknown"}`;
+        feedback += `\nPage is still at: ${localUrl}`;
         if (result.pageSummary) {
           feedback += `\n\nCurrent page state:\n${result.pageSummary.slice(0, 1500)}`;
         }
