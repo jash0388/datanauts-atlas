@@ -362,6 +362,7 @@ const Index = () => {
     setBrowserTitle("");
     setBrowserContent("");
     setBrowserScreenshot(null);
+    setBrowserLinks([]);
     const id = Date.now().toString();
     setSessions((prev) => [...prev, { id, title: "New Chat", messages: [WELCOME] }]);
     setActiveId(id);
