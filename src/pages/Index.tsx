@@ -45,6 +45,7 @@ const Index = () => {
   const [browserTitle, setBrowserTitle] = useState("");
   const [browserContent, setBrowserContent] = useState("");
   const [browserScreenshot, setBrowserScreenshot] = useState<string | null>(null);
+  const [browserLinks, setBrowserLinks] = useState<{ href: string; text: string }[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [currentCommand, setCurrentCommand] = useState("");
   const [stepNumber, setStepNumber] = useState(0);
