@@ -541,6 +541,7 @@ const Index = () => {
             totalSteps={totalSteps}
             pageTitle={browserTitle}
             pageContent={browserContent}
+            screenshot={browserScreenshot}
           />
         </div>
       )}
