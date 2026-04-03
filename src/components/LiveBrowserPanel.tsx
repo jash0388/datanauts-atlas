@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Globe, Loader2, Monitor, MousePointer } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 interface LiveBrowserPanelProps {
   url: string;
@@ -10,6 +11,7 @@ interface LiveBrowserPanelProps {
   totalSteps: number;
   pageTitle?: string;
   pageContent?: string;
+  screenshot?: string | null;
 }
 
 const LiveBrowserPanel = ({
@@ -19,6 +21,7 @@ const LiveBrowserPanel = ({
   stepNumber,
   pageTitle,
   pageContent,
+  screenshot,
 }: LiveBrowserPanelProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -26,20 +29,18 @@ const LiveBrowserPanel = ({
     if (contentRef.current) {
       contentRef.current.scrollTop = 0;
     }
-  }, [pageContent]);
+  }, [url]);
 
   return (
     <div className="flex flex-col h-full border-l border-border overflow-hidden bg-background">
       {/* Browser chrome bar */}
       <div className="h-10 flex items-center gap-2 px-3 border-b border-border bg-secondary/50 shrink-0">
-        {/* Traffic lights */}
         <div className="flex gap-1.5 mr-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-destructive/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-[hsl(var(--warning))]/80" />
-          <div className="w-2.5 h-2.5 rounded-full bg-[hsl(var(--success))]/80" />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#ff5f57" }} />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#ffbd2e" }} />
+          <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#28c840" }} />
         </div>
 
-        {/* URL bar */}
         <div className="flex-1 flex items-center gap-1.5 bg-background/60 rounded-md px-2.5 py-1 overflow-hidden">
           {isExecuting ? (
             <Loader2 size={11} className="animate-spin text-primary shrink-0" />
@@ -51,7 +52,6 @@ const LiveBrowserPanel = ({
           </span>
         </div>
 
-        {/* Agent badge */}
         {isExecuting && (
           <div className="flex items-center gap-1 bg-primary/10 border border-primary/20 rounded px-2 py-0.5 shrink-0">
             <MousePointer size={9} className="text-primary" />
@@ -63,7 +63,22 @@ const LiveBrowserPanel = ({
       {/* Browser viewport */}
       <div ref={contentRef} className="flex-1 relative overflow-auto bg-card">
         <AnimatePresence mode="wait">
-          {url && pageContent ? (
+          {screenshot ? (
+            <motion.div
+              key="screenshot"
+              initial={{ opacity: 0.6 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="w-full h-full overflow-auto"
+            >
+              <img
+                src={screenshot}
+                alt="Live browser view"
+                className="w-full h-auto block"
+                style={{ cursor: "crosshair" }}
+              />
+            </motion.div>
+          ) : url && pageContent ? (
             <motion.div
               key="page-content"
               initial={{ opacity: 0.6 }}
@@ -76,8 +91,8 @@ const LiveBrowserPanel = ({
                   {pageTitle}
                 </h2>
               )}
-              <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono">
-                {pageContent}
+              <div className="prose prose-sm prose-invert max-w-none">
+                <ReactMarkdown>{pageContent}</ReactMarkdown>
               </div>
             </motion.div>
           ) : (
