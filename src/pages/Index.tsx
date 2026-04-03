@@ -274,7 +274,10 @@ const Index = () => {
         setBrowserTitle(result.pageInfo.title);
       }
       if (result.pageSummary) {
-        setBrowserContent(result.pageSummary);
+        setBrowserContent(result.markdown || result.pageSummary);
+      }
+      if (result.screenshot) {
+        setBrowserScreenshot(result.screenshot);
       }
       if (result.linksCount !== undefined) {
         setActivity((a) => ({ ...a, elementsFound: result.linksCount }));
